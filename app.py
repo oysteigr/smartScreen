@@ -18,9 +18,13 @@ HEIGHT = 600
 
 BOX_SIZE = 30
 
+TRANSPORT_SIZE = 34
+LINE_THICKNESS = 1
+
 YELLOW = (1, .7, 0)
 ORANGE = (1, .45, 0)
 RED = (1, 0, 0)
+BLUE = (0.2, 0.2, 1)
 GREEN = (0, 1, 0)
 WHITE = (1, 1, 1)
 
@@ -80,11 +84,11 @@ class PersonOnline(AnchorLayout):
             return
         secondsSinceOnline = time.time() - timestampLastOnline
         with self.backgroundColor.canvas:
-            if secondsSinceOnline < 60:
+            if secondsSinceOnline < 300:
                 Color(*GREEN, 0.5)
             elif secondsSinceOnline < 3600:
                 Color(*YELLOW, 0.5)
-            else:
+            elif secondsSinceOnline < 36000:
                 Color(*RED, 0.5)
             RoundedRectangle(pos=self.getPos(BOX_SIZE, BOX_SIZE), size=(BOX_SIZE, BOX_SIZE), radius=[20, 20, 20, 20])
 
@@ -93,6 +97,58 @@ class PersonOnline(AnchorLayout):
         y = self.pos[1] + self.size[1] / 2 - size_y / 2
         return x, y
 
+class TransportTab(GridLayout):
+    def __init__(self, number, heading, source, tram, **kwargs):
+        super().__init__(**kwargs)
+        self.tram = tram
+        self.source_place = Label(text=source.upper(),
+                                   valign='middle', halign='right', underline=False)
+        self.source_place.bind(size=self.source_place.setter('text_size'))
+        self.backgroundColor = Label()
+        self.number = Label(text=number.upper(),
+                           valign='middle', underline=True)
+        self.heading_place = Label(text=heading.upper(),
+                           valign='middle', underline=True)
+        self.heading_place.bind(size=self.heading_place.setter('text_size'))
+        self.add_widget(self.source_place)
+        self.add_widget(self.number)
+        self.number.add_widget(self.backgroundColor)
+
+        self.add_widget(self.heading_place)
+        Clock.schedule_interval(self.update, 4)
+        self.update()
+
+        self.times = []
+
+        for i in range(1, 6):
+            self.times.append(Label(text=str(i * 6) + ' min'))
+            self.add_widget(self.times[i-1])
+
+    def update(self, *args):
+        self.backgroundColor.canvas.clear()
+        with self.backgroundColor.canvas:
+            if self.tram:
+                Color(*BLUE, 0.5)
+            else:
+                Color(*RED, 0.5)
+            RoundedRectangle(pos=self.getPos(TRANSPORT_SIZE, TRANSPORT_SIZE), size=(TRANSPORT_SIZE, TRANSPORT_SIZE), radius=[30, 0, 30, 0])
+            Rectangle(pos=self.getLinePos(), size=(2000, LINE_THICKNESS))
+            Rectangle(pos=self.getLinePosStart(), size=(self.getPos(TRANSPORT_SIZE, TRANSPORT_SIZE)[0], LINE_THICKNESS))
+
+    def getPos(self, size_x, size_y):
+        x = self.number.pos[0] + self.number.size[0] / 2 - size_x / 2
+        y = self.number.pos[1] + self.number.size[1] / 2 - size_y / 2
+        return x, y
+
+    def getLinePos(self):
+        x = self.number.pos[0] + self.number.size[0] / 2 + TRANSPORT_SIZE / 2
+        y = self.number.pos[1] + self.number.size[1] / 2 + TRANSPORT_SIZE / 2 - LINE_THICKNESS
+        return x, y
+
+    def getLinePosStart(self):
+        x = 0
+        y = self.number.pos[1] + self.number.size[1] / 2 - TRANSPORT_SIZE / 2 + LINE_THICKNESS
+        return x, y
 
 class InfoSkjerm(App):
 
@@ -124,113 +180,39 @@ class InfoSkjerm(App):
         header.add_widget(clock)
         header.add_widget(status)
 
+        trikk_1 = TransportTab('11', 'Kjelsås', 'Birkelunden', True, rows=1, size_hint=(0.8, 0.05))
+        trikk_2 = TransportTab('11', 'Majorstua', 'Birkelunden', True, rows=1, size_hint=(0.8, 0.05))
+        trikk_3 = TransportTab('12', 'Kjelsås', 'Birkelunden', True, rows=1, size_hint=(0.8, 0.05))
+        trikk_4 = TransportTab('12', 'Majorstua', 'Birkelunden', True, rows=1, size_hint=(0.8, 0.05))
+        trikk_5 = TransportTab('13', 'Storo-Grefsen', 'Birkelunden', True, rows=1, size_hint=(0.8, 0.05))
+        trikk_6 = TransportTab('13', 'Lilleaker', 'Birkelunden', True, rows=1, size_hint=(0.8, 0.05))
+        bus_1 = TransportTab('20', 'Skøyen', 'Kjøpenhavnsg.', False, rows=1, size_hint=(0.8, 0.05))
+        bus_2 = TransportTab('20', 'Galgeberg', 'Kjøpenhavnsg.', False, rows=1, size_hint=(0.8, 0.05))
+        bus_3 = TransportTab('21', 'Helsfyr', 'Kjøpenhavnsg.', False, rows=1, size_hint=(0.8, 0.05))
+        bus_4 = TransportTab('21', 'Tjuvholmen', 'Sannergata', False, rows=1, size_hint=(0.8, 0.05))
+        bus_5 = TransportTab('30', 'Nydalen', 'Dælenenga', False, rows=1, size_hint=(0.8, 0.05))
+        bus_6 = TransportTab('30', 'Bygdøy', 'Birkelunden', False, rows=1, size_hint=(0.8, 0.05))
 
-        trikk1_name = Label(text='11 - Galgeberg'.upper(), size_hint=(0.2, 0.05),
-                            valign='middle', halign='left', underline=True, padding_x=15)
-        trikk1_name.bind(size=trikk1_name.setter('text_size'))
-        trikk1_times = GridLayout(rows=1, size_hint=(0.8, 0.05))
-        trikk2_name = Label(text='11 - Skøyen'.upper(), size_hint=(0.2, 0.05),
-                            valign='middle', halign='left', underline=True, padding_x=15)
-        trikk2_name.bind(size=trikk2_name.setter('text_size'))
-        trikk2_times = GridLayout(rows=1, size_hint=(0.8, 0.05))
-        trikk3_name = Label(text='12 - Helsfyr'.upper(), size_hint=(0.2, 0.05),
-                            valign='middle', halign='left', underline=True, padding_x=15)
-        trikk3_name.bind(size=trikk3_name.setter('text_size'))
-        trikk3_times = GridLayout(rows=1, size_hint=(0.8, 0.05))
-        trikk4_name = Label(text='12 - Tjuvholmen'.upper(), size_hint=(0.2, 0.05),
-                            valign='middle', halign='left', underline=True, padding_x=15)
-        trikk4_name.bind(size=trikk4_name.setter('text_size'))
-        trikk4_times = GridLayout(rows=1, size_hint=(0.8, 0.05))
-        trikk5_name = Label(text='13 - Nydalen'.upper(), size_hint=(0.2, 0.05),
-                            valign='middle', halign='left', underline=True, padding_x=15)
-        trikk5_name.bind(size=trikk5_name.setter('text_size'))
-        trikk5_times = GridLayout(rows=1, size_hint=(0.8, 0.05))
-        trikk6_name = Label(text='13 - Bygdøy'.upper(), size_hint=(0.2, 0.05),
-                            valign='middle', halign='left', underline=True, padding_x=15)
-        trikk6_name.bind(size=trikk6_name.setter('text_size'))
-        trikk6_times = GridLayout(rows=1, size_hint=(0.8, 0.05))
-        buss1_name = Label(text='20 - Galgeberg'.upper(), size_hint=(0.2, 0.05),
-                           valign='middle', halign='left', underline=True, padding_x=15)
-        buss1_name.bind(size=buss1_name.setter('text_size'))
-        buss1_times = GridLayout(rows=1, size_hint=(0.8, 0.05))
-        buss2_name = Label(text='20 - Skøyen'.upper(), size_hint=(0.2, 0.05),
-                           valign='middle', halign='left', underline=True, padding_x=15)
-        buss2_name.bind(size=buss2_name.setter('text_size'))
-        buss2_times = GridLayout(rows=1, size_hint=(0.8, 0.05))
-        buss3_name = Label(text='21 - Helsfyr'.upper(), size_hint=(0.2, 0.05),
-                           valign='middle', halign='left', underline=True, padding_x=15)
-        buss3_name.bind(size=buss3_name.setter('text_size'))
-        buss3_times = GridLayout(rows=1, size_hint=(0.8, 0.05))
-        buss4_name = Label(text='21 - Tjuvholmen'.upper(), size_hint=(0.2, 0.05),
-                           valign='middle', halign='left', underline=True, padding_x=15)
-        buss4_name.bind(size=buss4_name.setter('text_size'))
-        buss4_times = GridLayout(rows=1, size_hint=(0.8, 0.05))
-        buss5_name = Label(text='30 - Nydalen'.upper(), size_hint=(0.2, 0.05),
-                           valign='middle', halign='left', underline=True, padding_x=15)
-        buss5_name.bind(size=buss5_name.setter('text_size'))
-        buss5_times = GridLayout(rows=1, size_hint=(0.8, 0.05))
-        buss6_name = Label(text='30 - Bygdøy'.upper(), size_hint=(0.2, 0.05),
-                           valign='middle', halign='left', underline=True, padding_x=15)
-        buss6_name.bind(size=buss6_name.setter('text_size'))
-        buss6_times = GridLayout(rows=1, size_hint=(0.8, 0.05))
+        body = GridLayout(cols=1, size_hint=(1, 0.85))
 
-        for i in range(1, 6):
-            trikk1_times.add_widget(Label(text=str(i * 6) + ' min'))
-            trikk2_times.add_widget(Label(text=str(i * 6 + 1) + ' min'))
-            trikk3_times.add_widget(Label(text=str(i * 6 + 2) + ' min'))
-            trikk4_times.add_widget(Label(text=str(i * 6 + 3) + ' min'))
-            trikk5_times.add_widget(Label(text=str(i * 6 + 4) + ' min'))
-            trikk6_times.add_widget(Label(text=str(i * 6 + 5) + ' min'))
-            buss1_times.add_widget(Label(text=str(i * 6 + 6) + ' min'))
-            buss2_times.add_widget(Label(text=str(i * 6 + 7) + ' min'))
-            buss3_times.add_widget(Label(text=str(i * 6 + 8) + ' min'))
-            buss4_times.add_widget(Label(text=str(i * 6 + 9) + ' min'))
-            buss5_times.add_widget(Label(text=str(i * 6 + 1) + ' min'))
-            buss6_times.add_widget(Label(text=str(i * 6 + 2) + ' min'))
-
-        body = GridLayout(cols=2, size_hint=(1, 0.85))
-
-        body.add_widget(trikk1_name)
-        body.add_widget(trikk1_times)
-        body.add_widget(trikk2_name)
-        body.add_widget(trikk2_times)
-        body.add_widget(trikk3_name)
-        body.add_widget(trikk3_times)
-        body.add_widget(trikk4_name)
-        body.add_widget(trikk4_times)
-        body.add_widget(trikk5_name)
-        body.add_widget(trikk5_times)
-        body.add_widget(trikk6_name)
-        body.add_widget(trikk6_times)
-        body.add_widget(buss1_name)
-        body.add_widget(buss1_times)
-        body.add_widget(buss2_name)
-        body.add_widget(buss2_times)
-        body.add_widget(buss3_name)
-        body.add_widget(buss3_times)
-        body.add_widget(buss4_name)
-        body.add_widget(buss4_times)
-        body.add_widget(buss5_name)
-        body.add_widget(buss5_times)
-        body.add_widget(buss6_name)
-        body.add_widget(buss6_times)
+        body.add_widget(trikk_1)
+        body.add_widget(trikk_2)
+        body.add_widget(trikk_3)
+        body.add_widget(trikk_4)
+        body.add_widget(trikk_5)
+        body.add_widget(trikk_6)
+        body.add_widget(bus_1)
+        body.add_widget(bus_2)
+        body.add_widget(bus_3)
+        body.add_widget(bus_4)
+        body.add_widget(bus_5)
+        body.add_widget(bus_6)
 
         root = BoxLayout(orientation='vertical')
         root.add_widget(header)
         root.add_widget(body)
 
-        draw_background(root, 600 * 0.85, 3)
-        draw_background(root, 1 * ((600 * 0.85) / 12), 1)
-        draw_background(root, 2 * ((600 * 0.85) / 12), 1)
-        draw_background(root, 3 * ((600 * 0.85) / 12), 1)
-        draw_background(root, 4 * ((600 * 0.85) / 12), 1)
-        draw_background(root, 5 * ((600 * 0.85) / 12), 1)
-        draw_background(root, 6 * ((600 * 0.85) / 12), 1)
-        draw_background(root, 7 * ((600 * 0.85) / 12), 1)
-        draw_background(root, 8 * ((600 * 0.85) / 12), 1)
-        draw_background(root, 9 * ((600 * 0.85) / 12), 1)
-        draw_background(root, 10 * ((600 * 0.85) / 12), 1)
-        draw_background(root, 11 * ((600 * 0.85) / 12), 1)
+
 
         return root
 
