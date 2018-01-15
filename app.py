@@ -1,13 +1,5 @@
-'''
-Canvas stress
-=============
-
-This example tests the performance of our Graphics engine by drawing large
-numbers of small squares. You should see a black canvas with buttons and a
-label at the bottom. Pressing the buttons adds small colored squares to the
-canvas.
-
-'''
+#!/usr/bin/env python
+# -*- coding: utf-8 -*- 
 
 import time
 
@@ -19,7 +11,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
 
-from ping import pingAndParseResult
+from ping import PingService
 
 WIDTH = 1024
 HEIGHT = 600
@@ -50,11 +42,12 @@ def draw_background(widget, y_pos, thickness, *args):
 class OnlineStatus:
     def __init__(self, ipMap):
         self.ipMap = ipMap
+        self.pingService = PingService(ipMap)
         self.onlineMap = {}
-        Clock.schedule_interval(self.updateStatus, 30)
+        Clock.schedule_interval(self.updateStatus, 10)
 
     def updateStatus(self, *largs):
-        self.onlineMap = pingAndParseResult(self.ipMap, self.onlineMap)
+        self.onlineMap = self.pingService.pingAndParseResult(self.onlineMap)
 
     def getSecondsSinceOnline(self, key):
         if len(self.onlineMap.items()) == 0:
@@ -67,7 +60,7 @@ class OnlineStatus:
 
 class IncrediblyCrudeClock(Label):
     def update(self, *args):
-        self.text = time.strftime("%d. %B - %H:%M")
+        self.text = time.strftime("%d. %B - %H:%M:%S")
 
 
 class PersonOnline(AnchorLayout):
