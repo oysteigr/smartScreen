@@ -12,6 +12,7 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
 
 from ping import PingService
+from ruterService import RuterService
 
 WIDTH = 1024
 HEIGHT = 600
@@ -98,31 +99,58 @@ class PersonOnline(AnchorLayout):
         return x, y
 
 class TransportTab(GridLayout):
-    def __init__(self, number, heading, source, tram, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, number, tram, stopId, direction, **kwargs):
+        super().__init__(rows=1, size_hint=(0.8, 0.05), **kwargs)
         self.tram = tram
-        self.source_place = Label(text=source.upper(),
-                                   valign='middle', halign='right', underline=False)
+        self.source_place = Label(text='-',
+                                  valign='middle', halign='right', underline=False)
         self.source_place.bind(size=self.source_place.setter('text_size'))
         self.backgroundColor = Label()
         self.number = Label(text=number.upper(),
-                           valign='middle', underline=True)
-        self.heading_place = Label(text=heading.upper(),
-                           valign='middle', underline=True)
+                            valign='middle', underline=True)
+        self.heading_place = Label(text='-',
+                                   valign='middle', underline=True)
         self.heading_place.bind(size=self.heading_place.setter('text_size'))
         self.add_widget(self.source_place)
         self.add_widget(self.number)
         self.number.add_widget(self.backgroundColor)
 
         self.add_widget(self.heading_place)
-        Clock.schedule_interval(self.update, 4)
-        self.update()
+
+        self.ruter_service = RuterService(number, stopId, direction)
 
         self.times = []
 
-        for i in range(1, 6):
-            self.times.append(Label(text=str(i * 6) + ' min'))
-            self.add_widget(self.times[i-1])
+        for i in range(0, 5):
+            self.times.append(Label(text='-'))
+            self.add_widget(self.times[i])
+
+
+        Clock.schedule_interval(self.update_times, 2)
+        Clock.schedule_interval(self.refresh_times, 10)
+        Clock.schedule_interval(self.update, 10)
+        Clock.schedule_interval(self.set_names, 10)
+
+        self.update()
+        self.ruter_service.refresh()
+        self.set_names()
+
+    def set_names(self, *args):
+        if (self.source_place.text == '-'):
+            self.source_place.text = self.ruter_service.getStopName()
+        if (self.heading_place.text == '-'):
+            self.heading_place.text = self.ruter_service.getDestName()
+
+    def refresh_times(self, *args):
+        self.ruter_service.refresh()
+
+    def update_times(self, *args):
+        times_strings = self.ruter_service.getNextDeparturesInText(5)
+        for i in range(0, 5):
+            if len(times_strings) > i:
+                self.times[i].text = times_strings[i]
+            else:
+                self.times[i].text = ''
 
     def update(self, *args):
         self.backgroundColor.canvas.clear()
@@ -134,6 +162,7 @@ class TransportTab(GridLayout):
             RoundedRectangle(pos=self.getPos(TRANSPORT_SIZE, TRANSPORT_SIZE), size=(TRANSPORT_SIZE, TRANSPORT_SIZE), radius=[30, 0, 30, 0])
             Rectangle(pos=self.getLinePos(), size=(2000, LINE_THICKNESS))
             Rectangle(pos=self.getLinePosStart(), size=(self.getPos(TRANSPORT_SIZE, TRANSPORT_SIZE)[0], LINE_THICKNESS))
+
 
     def getPos(self, size_x, size_y):
         x = self.number.pos[0] + self.number.size[0] / 2 - size_x / 2
@@ -166,9 +195,6 @@ class InfoSkjerm(App):
         onlines.add_widget(PersonOnline('HH'))
         onlines.add_widget(PersonOnline('OF'))
         onlines.add_widget(PersonOnline('SG'))
-        # onlines.add_widget(PersonOnline('IG'))
-        # onlines.add_widget(PersonOnline('TS'))
-        # onlines.add_widget(PersonOnline('PS'))
 
         status = Label(text='status', size_hint=(0.25, 1))
 
@@ -180,18 +206,18 @@ class InfoSkjerm(App):
         header.add_widget(clock)
         header.add_widget(status)
 
-        trikk_1 = TransportTab('11', 'Kjelsås', 'Birkelunden', True, rows=1, size_hint=(0.8, 0.05))
-        trikk_2 = TransportTab('11', 'Majorstua', 'Birkelunden', True, rows=1, size_hint=(0.8, 0.05))
-        trikk_3 = TransportTab('12', 'Kjelsås', 'Birkelunden', True, rows=1, size_hint=(0.8, 0.05))
-        trikk_4 = TransportTab('12', 'Majorstua', 'Birkelunden', True, rows=1, size_hint=(0.8, 0.05))
-        trikk_5 = TransportTab('13', 'Storo-Grefsen', 'Birkelunden', True, rows=1, size_hint=(0.8, 0.05))
-        trikk_6 = TransportTab('13', 'Lilleaker', 'Birkelunden', True, rows=1, size_hint=(0.8, 0.05))
-        bus_1 = TransportTab('20', 'Skøyen', 'Kjøpenhavnsg.', False, rows=1, size_hint=(0.8, 0.05))
-        bus_2 = TransportTab('20', 'Galgeberg', 'Kjøpenhavnsg.', False, rows=1, size_hint=(0.8, 0.05))
-        bus_3 = TransportTab('21', 'Helsfyr', 'Kjøpenhavnsg.', False, rows=1, size_hint=(0.8, 0.05))
-        bus_4 = TransportTab('21', 'Tjuvholmen', 'Sannergata', False, rows=1, size_hint=(0.8, 0.05))
-        bus_5 = TransportTab('30', 'Nydalen', 'Dælenenga', False, rows=1, size_hint=(0.8, 0.05))
-        bus_6 = TransportTab('30', 'Bygdøy', 'Birkelunden', False, rows=1, size_hint=(0.8, 0.05))
+        trikk_1 = TransportTab('11', True, '3010520', '1')
+        trikk_2 = TransportTab('11', True, '3010520', '2')
+        trikk_3 = TransportTab('12', True, '3010520', '1')
+        trikk_4 = TransportTab('12', True, '3010520', '2')
+        trikk_5 = TransportTab('13', True, '3010520', '1')
+        trikk_6 = TransportTab('13', True, '3010520', '2')
+        bus_1 = TransportTab('20', False, '3010525', '2')
+        bus_2 = TransportTab('20', False, '3010525', '1')
+        bus_3 = TransportTab('21', False, '3010525', '1')
+        bus_4 = TransportTab('21', False, '3010521', '2')
+        bus_5 = TransportTab('30', False, '3010524', '1')
+        bus_6 = TransportTab('30', False, '3010519', '2')
 
         body = GridLayout(cols=1, size_hint=(1, 0.85))
 
