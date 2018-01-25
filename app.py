@@ -22,19 +22,22 @@ BOX_SIZE = 30
 TRANSPORT_SIZE = 34
 LINE_THICKNESS = 1
 
-YELLOW = (1, .7, 0)
-ORANGE = (1, .45, 0)
-RED = (1, 0, 0)
-BLUE = (0.2, 0.2, 1)
-GREEN = (0, 1, 0)
-WHITE = (1, 1, 1)
+YELLOW = (1.0, 0.9, 0.0)
+ORANGE = (1.0, 0.45, 0.0)
+RED = (1.0, 0.0, 0.0)
+BLUE = (0.2, 0.2, 1.0)
+GREEN = (0.0, 1.0, 0.0)
+WHITE = (1.0, 1.0, 1.0)
+BLACK = (0.0, 0.0, 0.0)
+
+GREEN_TIMEOUT = 5*60
+YELLOW_TIMEOUT = 2*60*60
+RED_TIMEOUT = 8*60*60
+BLACK_TIMEOUT = 24*60*60
 
 ipMap = {"KG": "192.168.1.84",
          "ØG": "192.168.1.126",
          "SG": "192.168.1.153",
-         #"TS": "192.168.1.154",
-         #"PS": "192.168.1.155",
-         #"IG": "192.168.1.156",
          "HH": "192.168.1.124",
          "OF": "192.168.1.161"
          }
@@ -85,12 +88,31 @@ class PersonOnline(AnchorLayout):
             return
         secondsSinceOnline = time.time() - timestampLastOnline
         with self.backgroundColor.canvas:
-            if secondsSinceOnline < 300:
+            if secondsSinceOnline < GREEN_TIMEOUT:
                 Color(*GREEN, 0.5)
-            elif secondsSinceOnline < 3600:
-                Color(*YELLOW, 0.5)
-            elif secondsSinceOnline < 36000:
-                Color(*RED, 0.5)
+            elif secondsSinceOnline < YELLOW_TIMEOUT:
+                a = (secondsSinceOnline-GREEN_TIMEOUT)/YELLOW_TIMEOUT
+                colour = (GREEN[0] * (1.0 - a) + YELLOW[0] * a,
+                          GREEN[1] * (1.0 - a) + YELLOW[1] * a,
+                          GREEN[2] * (1.0 - a) + YELLOW[2] * a)
+                Color(*colour, 0.5)
+                print(str(colour) + '/' + str(a) + '\n')
+            elif secondsSinceOnline < RED_TIMEOUT:
+                a = (secondsSinceOnline-YELLOW_TIMEOUT)/RED_TIMEOUT
+                colour = (YELLOW[0] * (1.0 - a) + RED[0] * a,
+                          YELLOW[1] * (1.0 - a) + RED[1] * a,
+                          YELLOW[2] * (1.0 - a) + RED[2] * a)
+                Color(*colour, 0.5)
+                print(str(colour) + '/' + str(a) + '\n')
+            elif secondsSinceOnline < BLACK_TIMEOUT:
+                a = (secondsSinceOnline-RED_TIMEOUT)/BLACK_TIMEOUT
+                colour = (RED[0] * (1.0 - a) + BLACK[0] * a,
+                          RED[1] * (1.0 - a) + BLACK[1] * a,
+                          RED[2] * (1.0 - a) + BLACK[2] * a)
+                Color(*colour, 0.5)
+                print(str(colour) + '/' + str(a) + '\n')
+            else:
+                Color(*BLACK, 0.5)
             RoundedRectangle(pos=self.getPos(BOX_SIZE, BOX_SIZE), size=(BOX_SIZE, BOX_SIZE), radius=[20, 20, 20, 20])
 
     def getPos(self, size_x, size_y):
