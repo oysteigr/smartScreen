@@ -218,6 +218,7 @@ class InfoSkjerm(App):
         onlines.add_widget(PersonOnline('HH'))
         onlines.add_widget(PersonOnline('OF'))
         onlines.add_widget(PersonOnline('SG'))
+        onlines.add_widget(PersonOnline('KS'))
 
         status = Label(text='status', size_hint=(0.25, 1))
 
