@@ -130,9 +130,9 @@ class TransportTab(GridLayout):
         #self.source_place = Label(text='-', valign='middle', halign='right', underline=False)
         #self.source_place.bind(size=self.source_place.setter('text_size'))
         self.backgroundColor = Label()
-        self.number = Label(text=number.upper(), size_hint=(0.2, 1),
-                            valign='middle', underline=True)
-        self.heading_place = Label(text='-', font_size='25', size_hint=(0.8, 1),
+        self.number = Label(text=number.upper(), size_hint=(0.2, 1), font_size='20',
+                            valign='middle', underline=True, font_name='BebasNeue Regular.ttf')
+        self.heading_place = Label(text='-', font_size='18', size_hint=(0.8, 1),
                                    valign='middle', underline=True, font_name='BebasNeue Regular.ttf')
         self.heading_place.bind(size=self.heading_place.setter('text_size'))
         #self.add_widget(self.source_place)
