@@ -95,9 +95,9 @@ class RuterService:
             delta = dt - datetime.now(timezone.utc)
             deltaMin = int(delta.seconds / 60)
             if (deltaMin < 1):
-                departuresInStrings.append('now')
+                departuresInStrings.append('NOW')
             elif (deltaMin < 20):
-                departuresInStrings.append(str(deltaMin) + ' min')
+                departuresInStrings.append(str(deltaMin) + ' MIN')
             else:
                 departuresInStrings.append(str(dt.hour).zfill(2) + ':' + str(dt.minute).zfill(2))
 

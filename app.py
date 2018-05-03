@@ -31,22 +31,24 @@ WHITE = (1.0, 1.0, 1.0)
 BLACK = (0.0, 0.0, 0.0)
 
 GREEN_TIMEOUT = 5*60
-YELLOW_TIMEOUT = 2*60*60
+YELLOW_TIMEOUT = 10*60
 RED_TIMEOUT = 8*60*60
 BLACK_TIMEOUT = 24*60*60
 
-ipMap = {"KG": "192.168.1.84",
-         "ØG": "192.168.1.126",
+ipMap = {"KG": "192.168.1.126",
+         "ØG": "192.168.1.58",
          "SG": "192.168.1.153",
          "HH": "192.168.1.124",
          "OF": "192.168.1.161",
          "KS": "192.168.1.28"
          }
 
+
 def draw_background(widget, y_pos, thickness, *args):
     with widget.canvas.before:
         Color(.4, .4, .4, 1)
         Rectangle(pos=(0, y_pos), size=(WIDTH, thickness))
+
 
 class OnlineStatus:
     def __init__(self, ipMap):
@@ -123,31 +125,44 @@ class PersonOnline(AnchorLayout):
 
 class TransportTab(GridLayout):
     def __init__(self, number, tram, stopId, direction, **kwargs):
-        super().__init__(rows=1, size_hint=(0.8, 0.05), **kwargs)
+        super().__init__(rows=2, size_hint=(1, 1), **kwargs)
         self.tram = tram
-        self.source_place = Label(text='-',
-                                  valign='middle', halign='right', underline=False)
-        self.source_place.bind(size=self.source_place.setter('text_size'))
+        #self.source_place = Label(text='-', valign='middle', halign='right', underline=False)
+        #self.source_place.bind(size=self.source_place.setter('text_size'))
         self.backgroundColor = Label()
-        self.number = Label(text=number.upper(),
+        self.number = Label(text=number.upper(), size_hint=(0.2, 1),
                             valign='middle', underline=True)
-        self.heading_place = Label(text='-',
-                                   valign='middle', underline=True)
+        self.heading_place = Label(text='-', font_size='25', size_hint=(0.8, 1),
+                                   valign='middle', underline=True, font_name='BebasNeue Regular.ttf')
         self.heading_place.bind(size=self.heading_place.setter('text_size'))
-        self.add_widget(self.source_place)
-        self.add_widget(self.number)
+        #self.add_widget(self.source_place)
+        self.header = BoxLayout(size_hint=(1, 0.15))
+        self.header.add_widget(self.number)
         self.number.add_widget(self.backgroundColor)
 
-        self.add_widget(self.heading_place)
+        self.header.add_widget(self.heading_place)
 
         self.ruter_service = RuterService(number, stopId, direction)
 
+        self.body = BoxLayout(size_hint=(1, 0.85))
+
         self.times = []
 
-        for i in range(0, 5):
-            self.times.append(Label(text='-'))
-            self.add_widget(self.times[i])
+        self.next_times = GridLayout(rows=3, size_hint=(0.3, 1))
 
+        self.times.append(Label(text='-', font_size='70', font_name='BebasNeue Regular.ttf', halign='right'))
+        self.next = BoxLayout(size_hint=(0.7, 1))
+        self.next.add_widget(self.times[0])
+
+        for i in range(1, 4):
+            self.times.append(Label(text='-', font_name='BebasNeue Regular.ttf', font_size='25'))
+            self.next_times.add_widget(self.times[i])
+
+        self.body.add_widget(self.next)
+        self.body.add_widget(self.next_times)
+
+        self.add_widget(self.header)
+        self.add_widget(self.body)
 
         Clock.schedule_interval(self.update_times, 2)
         Clock.schedule_interval(self.refresh_times, 10)
@@ -159,9 +174,9 @@ class TransportTab(GridLayout):
         self.set_names()
 
     def set_names(self, *args):
-        if (self.source_place.text == '-'):
-            self.source_place.text = self.ruter_service.getStopName()
-        if (self.heading_place.text == '-'):
+#        if self.source_place.text == '-':
+#            self.source_place.text = self.ruter_service.getStopName()
+        if self.heading_place.text == '-':
             self.heading_place.text = self.ruter_service.getDestName()
 
     def refresh_times(self, *args):
@@ -169,7 +184,7 @@ class TransportTab(GridLayout):
 
     def update_times(self, *args):
         times_strings = self.ruter_service.getNextDeparturesInText(5)
-        for i in range(0, 5):
+        for i in range(0, 4):
             if len(times_strings) > i:
                 self.times[i].text = times_strings[i]
             else:
@@ -183,9 +198,8 @@ class TransportTab(GridLayout):
             else:
                 Color(*RED, 0.5)
             RoundedRectangle(pos=self.getPos(TRANSPORT_SIZE, TRANSPORT_SIZE), size=(TRANSPORT_SIZE, TRANSPORT_SIZE), radius=[30, 0, 30, 0])
-            Rectangle(pos=self.getLinePos(), size=(2000, LINE_THICKNESS))
-            Rectangle(pos=self.getLinePosStart(), size=(self.getPos(TRANSPORT_SIZE, TRANSPORT_SIZE)[0], LINE_THICKNESS))
-
+            Rectangle(pos=self.getLinePos(), size=(200, LINE_THICKNESS))
+            #Rectangle(pos=self.getLinePosStart(), size=(self.getPos(TRANSPORT_SIZE, TRANSPORT_SIZE)[0], LINE_THICKNESS))
 
     def getPos(self, size_x, size_y):
         x = self.number.pos[0] + self.number.size[0] / 2 - size_x / 2
@@ -201,6 +215,7 @@ class TransportTab(GridLayout):
         x = 0
         y = self.number.pos[1] + self.number.size[1] / 2 - TRANSPORT_SIZE / 2 + LINE_THICKNESS
         return x, y
+
 
 class InfoSkjerm(App):
 
@@ -243,7 +258,7 @@ class InfoSkjerm(App):
         bus_5 = TransportTab('30', False, '3010524', '1')
         bus_6 = TransportTab('30', False, '3010519', '2')
 
-        body = GridLayout(cols=1, size_hint=(1, 0.85))
+        body = GridLayout(cols=4, size_hint=(1, 0.85))
 
         body.add_widget(trikk_1)
         body.add_widget(trikk_2)
