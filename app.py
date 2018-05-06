@@ -14,13 +14,13 @@ from kivy.uix.label import Label
 from ping import PingService
 from ruterService import RuterService
 
-WIDTH = 1024
-HEIGHT = 600
+WIDTH = 800
+HEIGHT = 480
 
 BOX_SIZE = 30
 
 TRANSPORT_SIZE = 34
-LINE_THICKNESS = 1
+LINE_THICKNESS = 2
 
 YELLOW = (1.0, 0.9, 0.0)
 ORANGE = (1.0, 0.45, 0.0)
@@ -34,6 +34,8 @@ GREEN_TIMEOUT = 5*60
 YELLOW_TIMEOUT = 10*60
 RED_TIMEOUT = 8*60*60
 BLACK_TIMEOUT = 24*60*60
+VISIBILITY_TIMEOUT = 24*60*60*7
+
 
 ipMap = {"KG": "192.168.1.126",
          "ØG": "192.168.1.58",
@@ -82,6 +84,7 @@ class PersonOnline(AnchorLayout):
         self.add_widget(self.backgroundColor)
         self.add_widget(self.frontText)
         self.onlineStatus = OnlineStatus(ipMap)
+        self.show = False
         Clock.schedule_interval(self.update, 2)
 
     def update(self, *args):
@@ -93,29 +96,30 @@ class PersonOnline(AnchorLayout):
         with self.backgroundColor.canvas:
             if secondsSinceOnline < GREEN_TIMEOUT:
                 Color(*GREEN, 0.5)
+                self.show = True
             elif secondsSinceOnline < YELLOW_TIMEOUT:
                 a = (secondsSinceOnline-GREEN_TIMEOUT)/YELLOW_TIMEOUT
                 colour = (GREEN[0] * (1.0 - a) + YELLOW[0] * a,
                           GREEN[1] * (1.0 - a) + YELLOW[1] * a,
                           GREEN[2] * (1.0 - a) + YELLOW[2] * a)
                 Color(*colour, 0.5)
-                print(str(colour) + '/' + str(a) + '\n')
             elif secondsSinceOnline < RED_TIMEOUT:
                 a = (secondsSinceOnline-YELLOW_TIMEOUT)/RED_TIMEOUT
                 colour = (YELLOW[0] * (1.0 - a) + RED[0] * a,
                           YELLOW[1] * (1.0 - a) + RED[1] * a,
                           YELLOW[2] * (1.0 - a) + RED[2] * a)
                 Color(*colour, 0.5)
-                print(str(colour) + '/' + str(a) + '\n')
             elif secondsSinceOnline < BLACK_TIMEOUT:
                 a = (secondsSinceOnline-RED_TIMEOUT)/BLACK_TIMEOUT
                 colour = (RED[0] * (1.0 - a) + BLACK[0] * a,
                           RED[1] * (1.0 - a) + BLACK[1] * a,
                           RED[2] * (1.0 - a) + BLACK[2] * a)
                 Color(*colour, 0.5)
-                print(str(colour) + '/' + str(a) + '\n')
-            else:
+            elif secondsSinceOnline < VISIBILITY_TIMEOUT:
                 Color(*BLACK, 0.5)
+            else:
+                self.show = False
+
             RoundedRectangle(pos=self.getPos(BOX_SIZE, BOX_SIZE), size=(BOX_SIZE, BOX_SIZE), radius=[20, 20, 20, 20])
 
     def getPos(self, size_x, size_y):
@@ -123,19 +127,18 @@ class PersonOnline(AnchorLayout):
         y = self.pos[1] + self.size[1] / 2 - size_y / 2
         return x, y
 
+
 class TransportTab(GridLayout):
     def __init__(self, number, tram, stopId, direction, **kwargs):
         super().__init__(rows=2, size_hint=(1, 1), **kwargs)
         self.tram = tram
-        #self.source_place = Label(text='-', valign='middle', halign='right', underline=False)
-        #self.source_place.bind(size=self.source_place.setter('text_size'))
         self.backgroundColor = Label()
-        self.number = Label(text=number.upper(), size_hint=(0.2, 1), font_size='20',
-                            valign='middle', underline=True, font_name='BebasNeue Regular.ttf')
+        self.number = Label(text=number.upper(), size_hint=(0.2, 1), font_size='30',
+                            valign='middle', underline=False, font_name='BebasNeue Regular.ttf')
         self.heading_place = Label(text='-', font_size='18', size_hint=(0.8, 1),
                                    valign='middle', underline=True, font_name='BebasNeue Regular.ttf')
         self.heading_place.bind(size=self.heading_place.setter('text_size'))
-        #self.add_widget(self.source_place)
+
         self.header = BoxLayout(size_hint=(1, 0.15))
         self.header.add_widget(self.number)
         self.number.add_widget(self.backgroundColor)
@@ -174,8 +177,6 @@ class TransportTab(GridLayout):
         self.set_names()
 
     def set_names(self, *args):
-#        if self.source_place.text == '-':
-#            self.source_place.text = self.ruter_service.getStopName()
         if self.heading_place.text == '-':
             self.heading_place.text = self.ruter_service.getDestName()
 
@@ -197,9 +198,8 @@ class TransportTab(GridLayout):
                 Color(*BLUE, 0.5)
             else:
                 Color(*RED, 0.5)
-            RoundedRectangle(pos=self.getPos(TRANSPORT_SIZE, TRANSPORT_SIZE), size=(TRANSPORT_SIZE, TRANSPORT_SIZE), radius=[30, 0, 30, 0])
-            Rectangle(pos=self.getLinePos(), size=(200, LINE_THICKNESS))
-            #Rectangle(pos=self.getLinePosStart(), size=(self.getPos(TRANSPORT_SIZE, TRANSPORT_SIZE)[0], LINE_THICKNESS))
+            RoundedRectangle(pos=self.getPos(TRANSPORT_SIZE, TRANSPORT_SIZE), size=(TRANSPORT_SIZE, TRANSPORT_SIZE), radius=[0, 0, 0, 0])
+            Rectangle(pos=self.getLinePos(), size=(150, LINE_THICKNESS))
 
     def getPos(self, size_x, size_y):
         x = self.number.pos[0] + self.number.size[0] / 2 - size_x / 2
@@ -225,15 +225,28 @@ class InfoSkjerm(App):
         Config.set('graphics', 'width', WIDTH)
         Config.set('graphics', 'height', HEIGHT)
 
-    def build(self):
-        onlines = GridLayout(rows=2, size_hint=(0.25, 1))
+        self.onlines = GridLayout(rows=1, size_hint=(0.25, 1))
 
-        onlines.add_widget(PersonOnline('KG'))
-        onlines.add_widget(PersonOnline('ØG'))
-        onlines.add_widget(PersonOnline('HH'))
-        onlines.add_widget(PersonOnline('OF'))
-        onlines.add_widget(PersonOnline('SG'))
-        onlines.add_widget(PersonOnline('KS'))
+        Clock.schedule_interval(self.update, 5)
+        self.persons = []
+        self.persons.append(PersonOnline('KG'))
+        self.persons.append(PersonOnline('ØG'))
+        self.persons.append(PersonOnline('HH'))
+        self.persons.append(PersonOnline('OF'))
+        self.persons.append(PersonOnline('SG'))
+        self.persons.append(PersonOnline('KS'))
+
+    def update(self, *args):
+        self.onlines.clear_widgets()
+
+        for person in self.persons:
+            if person.show:
+                self.onlines.add_widget(person)
+
+
+    def build(self):
+
+
 
         status = Label(text='status', size_hint=(0.25, 1))
 
@@ -241,7 +254,7 @@ class InfoSkjerm(App):
         Clock.schedule_interval(clock.update, 1)
 
         header = BoxLayout(size_hint=(1, 0.15))
-        header.add_widget(onlines)
+        header.add_widget(self.onlines)
         header.add_widget(clock)
         header.add_widget(status)
 
@@ -260,18 +273,19 @@ class InfoSkjerm(App):
 
         body = GridLayout(cols=4, size_hint=(1, 0.85))
 
-        body.add_widget(trikk_1)
         body.add_widget(trikk_2)
-        body.add_widget(trikk_3)
         body.add_widget(trikk_4)
-        body.add_widget(trikk_5)
         body.add_widget(trikk_6)
         body.add_widget(bus_1)
+        body.add_widget(bus_4)
+        body.add_widget(bus_6)
+
+        body.add_widget(trikk_1)
+        body.add_widget(trikk_3)
+        body.add_widget(trikk_5)
         body.add_widget(bus_2)
         body.add_widget(bus_3)
-        body.add_widget(bus_4)
         body.add_widget(bus_5)
-        body.add_widget(bus_6)
 
         root = BoxLayout(orientation='vertical')
         root.add_widget(header)
